@@ -1,7 +1,9 @@
 var ngmin = require('ngmin')
   , through = require('through')
 
-module.exports = function() {
+module.exports = function(file) {
+  if(!/\.(js|coffee)$/i.test(file)) return through();
+
   var buffered = ''
 
   function write(data) {
@@ -9,14 +11,15 @@ module.exports = function() {
   }
 
   function end() {
-    var annotated
-    try {
-      annotated = ngmin.annotate(buffered)
-    } catch (err) {
-      this.emit('error', err)
+    if(/angular\.module/.test(buffered)) {
+      try {
+        buffered = ngmin.annotate(buffered)
+      } catch (err) {
+        this.emit('error', err)
+      }
     }
 
-    this.queue(annotated)
+    this.queue(buffered)
     this.queue(null)
   }
 
